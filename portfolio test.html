@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Interactive Portfolio</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f8f8f8;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 42px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        .project {
+            margin-bottom: 30px;
+            padding: 30px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .project:hover {
+            transform: scale(1.05);
+        }
+
+        h2 {
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+
+        p {
+            font-size: 18px;
+        }
+
+        button {
+            background-color: #333;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #555;
+        }
+
+        .details {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+
+        .details p {
+            font-size: 16px;
+        }
+
+        #image-preview {
+            max-width: 100%;
+
+            margin-top: 20px;
+
+        }
+
+        .image-upload-form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .custom-file-upload {
+        background-color: #333;
+        color: #fff;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        text-align: center;
+        margin-top: 10px;
+    }
+
+    .custom-file-upload:hover {
+        background-color: #555;
+    }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Your Interactive Portfolio</h1>
+    </header>
+    <div class="container">
+        <h2>AI Projects</h2>
+        <div class="project">
+            <h2>Katze oder Hund Klassifizierer</h2>
+            <p>Eine einfache KI, die zwischen Katzen und Hunden unterscheiden kann. Hier testen:</p>
+            <button onclick="toggleDetails('project1')">Show Details</button>
+            
+            <div id="project1-details" class="details">
+                <form id="postForm">
+                    <input type="file" id="image" name="upload" accept="image/*" onchange="previewImage()" />
+                </form>
+                <p id="ergebnis">Ergebnis: </p>
+                <img id="image-preview" src="#" onerror="this.style.display='none'">
+                <br>
+                <button onclick="sendRequest()">Klassifizieren</button>
+           </div>
+        
+        </div>
+        <div class="project">
+            <h2>Project 2</h2>
+            <p>Beschreibung Ihres zweiten KI-Projekts hier.</p>
+            <button onclick="toggleDetails('project2')">Show Details</button>
+            <div id="project2-details" class="details">
+                <p>Zusätzliche Details für Projekt 2.</p>
+            </div>
+        </div>
+    </div>
+    
+    
+    <script>
+        
+        function toggleDetails(projectId) {
+            var projectDetails = document.getElementById(projectId + '-details');
+            if (projectDetails.style.display === 'none' || projectDetails.style.display === '') {
+                projectDetails.style.display = 'block';
+            } else {
+                projectDetails.style.display = 'none';
+            }
+        }
+
+
+        function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            if (!file) {
+            reject(new Error('Keine Datei ausgewählt.'));
+            return;
+            }
+
+            const reader = new FileReader();
+
+            reader.onload = function () {
+            const base64String = reader.result.split(',')[1]; // Das "data:"-Präfix entfernen
+            resolve(base64String);
+            };
+
+            reader.onerror = function (error) {
+            reject(error);
+            };
+
+            reader.readAsDataURL(file);
+        });
+        }
+
+        document.getElementById("postForm").addEventListener("change", function() {
+            const formData = new FormData(document.getElementById('postForm'));
+            let bild = formData.get("upload")
+        
+
+            imgElement = document.getElementById("image-preview")
+            imgElement.style.display = "block"
+            imgElement.src = URL.createObjectURL(bild)
+        })
+
+        async function sendRequest() {
+            const formData = new FormData(document.getElementById('postForm'));
+            let bild = formData.get("upload")
+        
+            bild = await fileToBase64(bild)
+            event.preventDefault(); // Verhindert das Neuladen der Seite
+                let Data = {"img": null};
+                Data["img"] = bild
+                Data = JSON.stringify(Data)
+
+                fetch('http://127.0.0.1:5000/cat_or_dog', {
+                    method: 'POST',
+                    body: Data,
+                    mode: "cors",
+                    headers: {
+                        "Content-Type": "application/json",
+                    }
+                })
+                .then(response => response.json()
+                    )
+                .then(data => {
+                    console.log('Antwort vom Server:', data["out"]);
+                    // Hier kannst du die Antwort des Servers verarbeiten
+                    document.getElementById("ergebnis").innerHTML = "Ergebnis: " + data["out"]
+                })
+                .catch(error => {
+                    console.error('Fehler beim Senden des POST-Requests:', error);
+                });
+
+        }
+    </script>
+</body>
+</html>
